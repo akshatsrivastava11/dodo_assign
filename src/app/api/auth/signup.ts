@@ -8,9 +8,7 @@ export interface CustomerReturnDodoType {
 }
 
 // signup.ts - Fixed version
-import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import axios from 'axios';
 import { createCustomer } from "@/utils/dodopay/dodo";
 import { supabase } from "@/utils/supabase/supabase";
 
@@ -22,7 +20,9 @@ export async function signUpWorkflow(email: string, password: string) {
     
     // Refresh session before signup
     await supabase.auth.refreshSession();
-
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
     // Step 1: Sign up user in Supabase - USE THE PARAMETERS!
     console.log("📝 Attempting to sign up user with:", email);
     const { data, error } = await supabase.auth.signUp({ 

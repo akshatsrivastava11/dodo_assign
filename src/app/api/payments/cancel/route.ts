@@ -1,35 +1,64 @@
 import { updateSubscriptionInDatabase } from "@/utils/api-functions";
-import { dodo } from "@/utils/dodopay/dodo";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const email = body.email;
-    const subscriptionId = body.subscriptionId;
+    const subscriptionId: string = body.subscriptionId;
 
-    // const response = await dodo.subscriptions.update(subscriptionId, {
-    //   status: "cancelled",
-    //   metadata: {} // metadata can be sent here 
-    // })
-    const response=await fetch(`https://test.dodopayments.com/subscriptions/${subscriptionId}`,{
-method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.NEXT_DODO_PAYMENT_KEY}`, 
-  },
-  body: JSON.stringify({
-    cancel_at_next_billing_date: true,
-  })
-})
-  console.log("the response is ",response)    
+    if (!email || !subscriptionId) {
+      return NextResponse.json(
+        { error: "Email and subscription ID are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate environment variable exists
+    const apiKey = process.env.NEXT_DODO_PAYMENT_KEY;
+    if (!apiKey) {
+      console.error("NEXT_DODO_PAYMENT_KEY environment variable is not set");
+      return NextResponse.json(
+        { error: "Payment service configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Construct URL more explicitly
+    const apiUrl = `https://test.dodopayments.com/subscriptions/${subscriptionId}`;
+    
+    console.log("Making request to:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        cancel_at_next_billing_date: true,
+      })
+    });
+
+    console.log("Response status:", response.status);
+    console.log("Response ok:", response.ok);
+
+    // Check if the API call was successful
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Dodo Payments API error:", response.status, errorText);
+      return NextResponse.json(
+        { error: "Failed to cancel subscription with payment provider" },
+        { status: 500 }
+      );
+    }
+
     // Step 2: Update database
-    const result = await updateSubscriptionInDatabase(email!, subscriptionId);
-
+    const result = await updateSubscriptionInDatabase(email, subscriptionId);
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error?.message },
-        { status: result.error?.status }
+        { error: result.error?.message || "Database update failed" },
+        { status: result.error?.status || 500 }
       );
     }
 
@@ -37,6 +66,7 @@ method: "POST",
       success: true,
       message: "Subscription cancelled and database updated successfully",
     });
+
   } catch (error) {
     console.error("Error during subscription cancellation:", error);
     return NextResponse.json(

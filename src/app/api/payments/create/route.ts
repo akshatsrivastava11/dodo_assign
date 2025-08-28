@@ -1,5 +1,4 @@
 
-import { dodo } from "@/utils/dodopay/dodo";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CountryCode } from "dodopayments/resources/misc.mjs";
@@ -54,10 +53,10 @@ export async function POST(request: NextRequest) {
     
   }),
 });
-
-  console.log("the response is ",await response.json())
-  console.log("the payment link is",response.payment_link)
-    return NextResponse.json({ paymentLink: response.payment_link });
+  const data=await response.json()
+  console.log("the response is ",data)
+  console.log("the payment link is",data.payment_link)
+    return NextResponse.json({ paymentLink: data.payment_link });
     
   } catch (err) {
     console.error("Payment link creation failed", err);
