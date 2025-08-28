@@ -6,7 +6,7 @@ const webhook = new Webhook(process.env.NEXT_PUBLIC_DODO_WEBHOOK_KEY!);
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Use a service role key for backend writes
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! 
 );
 
 export async function POST(request: NextRequest) {
